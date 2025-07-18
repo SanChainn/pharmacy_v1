@@ -1,0 +1,41 @@
+<!-- inventory/templates/inventory/staff_list.html -->
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Manage Staff</h1>
+    <a href="{% url 'create_staff' %}" class="btn btn-primary">Create New Staff</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        All Staff Members
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Username</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in staff_users %}
+                <tr>
+                    <td>{{ staff.username }}</td>
+                    <td>
+                        <a href="{% url 'manage_staff_permissions' staff.pk %}" class="btn btn-sm btn-warning">Manage Permissions</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="text-center">
+                        No staff members found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

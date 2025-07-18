@@ -1,0 +1,109 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-icon {
+        font-size: 4rem;
+        color: #0d6efd;
+    }
+    .dashboard-card {
+        transition: transform .2s, box-shadow .2s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5">Welcome to NC Pharmacy</h1>
+        <p class="lead">Select an option below to get started.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Inventory -->
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'medicine_list' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm dashboard-card">
+                    <div class="card-body p-4">
+                        <i class="bi bi-box-seam dashboard-icon mb-3"></i>
+                        <h5 class="card-title">Inventory</h5>
+                        <p class="card-text text-muted">Manage medicines and stock levels.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Point of Sale -->
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'pos' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm dashboard-card">
+                    <div class="card-body p-4">
+                        <i class="bi bi-cart-check dashboard-icon mb-3"></i>
+                        <h5 class="card-title">Point of Sale</h5>
+                        <p class="card-text text-muted">Create and manage sales transactions.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Sales Report -->
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'sales_report' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm dashboard-card">
+                    <div class="card-body p-4">
+                        <i class="bi bi-file-earmark-bar-graph dashboard-icon mb-3"></i>
+                        <h5 class="card-title">Sales Report</h5>
+                        <p class="card-text text-muted">View monthly and total revenue.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        {% if user.profile.role == 'admin' %}
+        <!-- Manage Staff -->
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'manage_staff' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm dashboard-card">
+                    <div class="card-body p-4">
+                        <i class="bi bi-people dashboard-icon mb-3"></i>
+                        <h5 class="card-title">Manage Staff</h5>
+                        <p class="card-text text-muted">Add, remove, and manage users.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Settings -->
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'settings' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm dashboard-card">
+                    <div class="card-body p-4">
+                        <i class="bi bi-gear dashboard-icon mb-3"></i>
+                        <h5 class="card-title">Settings</h5>
+                        <p class="card-text text-muted">Configure application settings.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Logout -->
+        <div class="col-md-4 col-sm-6">
+            <a href="{% url 'logout' %}" class="text-decoration-none">
+                <div class="card h-100 text-center shadow-sm dashboard-card">
+                    <div class="card-body p-4">
+                        <i class="bi bi-box-arrow-right dashboard-icon mb-3"></i>
+                        <h5 class="card-title">Logout</h5>
+                        <p class="card-text text-muted">Sign out of your account.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

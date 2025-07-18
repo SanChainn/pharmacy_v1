@@ -1,0 +1,288 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Sale Voucher #{{ sale.pk }}{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background-color: #f5f5f5;
+  }
+
+  .receipt-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 3rem;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .receipt-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .receipt-logo-wrapper {
+    justify-self: start;
+  }
+
+  .receipt-logo-wrapper img {
+    height: 100px;
+    max-width: 100%;
+  }
+
+  .receipt-title {
+    font-size: 2.4rem;
+    font-weight: bold;
+    color: #0a51d4;
+    text-align: center;
+    justify-self: center;
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+    margin-left: 0;
+    margin-right: 6.5rem;
+  }
+
+  .info-block-header {
+    background: #0a51d4;
+    color: #fff;
+    display: inline-block;
+    padding: 0.3em 1em;
+    border-radius: 0.3em;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    page-break-inside: avoid; /* Avoid breaking table inside */
+  }
+
+  .receipt-table thead th {
+    background-color: #0a51d4;
+    color: #fff;
+    text-align: center;
+    padding: 0.8rem;
+  }
+
+  .receipt-table tbody td {
+    padding: 0.6rem;
+    vertical-align: middle;
+  }
+
+  .receipt-table tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+  }
+
+  .text-end {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .receipt-summary {
+    border-top: 2px dashed #333;
+    padding-top: 1.2rem;
+    font-size: 1.1rem;
+    page-break-inside: avoid;
+  }
+
+  .receipt-total {
+    font-weight: bold;
+    font-size: 1.4rem;
+  }
+
+  .receipt-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .pharmacy-contact-info {
+    font-size: 0.95rem;
+    text-align: left;
+    margin-top: 1rem;
+    margin-left: 1.5rem; /* shifted left */
+  }
+
+  /* Tighter line spacing for info sections */
+  .customer-info p,
+  .invoice-info-block p,
+  .pharmacy-contact-info p {
+    margin: 0.1rem 0;
+    line-height: 1.3;
+  }
+
+  /* Remove bottom margins for info-block-headers to tighten vertical spacing */
+  .info-block-header {
+    margin-bottom: 0.3rem;
+  }
+
+  @media print {
+    body {
+      background-color: #fff !important;
+      -webkit-print-color-adjust: exact; /* ensures background colors print */
+      color-adjust: exact;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .receipt-container {
+      margin: 0;
+      border: none;
+      padding: 1in 0.8in 1in 0.8in;
+      box-shadow: none;
+      max-width: 100%;
+      font-size: 1.05rem;
+      page-break-after: always;
+      page-break-inside: avoid;
+      overflow: visible;
+    }
+
+    .receipt-logo-wrapper img {
+      height: 80px;
+      max-width: 100%;
+    }
+
+    .receipt-title {
+      font-size: 2rem;
+      margin-right: 4rem; /* keep aligned on print */
+    }
+
+    .receipt-table thead th,
+    .receipt-table tbody td {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .receipt-summary,
+    .receipt-footer {
+      font-size: 1rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #999;
+    }
+
+    .pharmacy-contact-info {
+      text-align: left !important;
+      margin-left: 0.1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Prevent table rows from breaking across pages */
+    tr {
+      page-break-inside: avoid !important;
+      page-break-after: auto !important;
+    }
+  }
+</style>
+
+<div class="container-fluid">
+  <div class="receipt-container shadow-sm">
+    <!-- Header with logo and centered title -->
+    <div class="receipt-header">
+      <div class="receipt-logo-wrapper">
+        <img src="{% static 'inventory/logo_1.png' %}" alt="PharmaSys Logo">
+      </div>
+      <div class="receipt-title">{{ pharmacy_info.name }}</div>
+      <div></div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="customer-info">
+          <div class="info-block-header">Customer Information</div>
+          <p><strong>Name:</strong> {{ sale.customer_name|default:"N/A" }}</p>
+          <p><strong>Phone:</strong> {{ sale.customer_phone|default:"N/A" }}</p>
+          <p><strong>Address:</strong> {{ sale.customer_address|default:"N/A" }}</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="invoice-info-block">
+          <div class="info-block-header">Invoice Information</div>
+          <p><strong>Voucher #:</strong> {{ sale.pk }}</p>
+          <p><strong>Date:</strong> {{ sale.created_at|date:"Y-m-d H:i:s" }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="receipt-table table-bordered">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Name</th>
+            <th>Package Type</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in sale.items.all %}
+          <tr>
+            <td class="text-center">{{ forloop.counter }}</td>
+            <td>{{ item.medicine.name }}</td>
+            <td class="text-center">{{ item.medicine.package_type }}</td>
+            <td class="text-center">{{ item.quantity }}</td>
+            <td class="text-end"> {{ item.price_at_sale|floatformat:0|intcomma }}</td>
+            <td class="text-end"> {{ item.subtotal|floatformat:0|intcomma }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="receipt-summary">
+      <div class="row">
+        <div class="col-6 text-start">Subtotal:</div>
+        <div class="col-6 text-end"> {{ sale.items_only_total|floatformat:0|intcomma }}</div>
+      </div>
+      <div class="row">
+        <div class="col-6 text-start">Delivery Fee:</div>
+        <div class="col-6 text-end"> {{ sale.delivery_fee|floatformat:0|intcomma }}</div>
+      </div>
+      <hr>
+      <div class="row receipt-total">
+        <div class="col-6 text-start">GRAND TOTAL:</div>
+        <div class="col-6 text-end"> {{ sale.total_amount|floatformat:0|intcomma }}</div>
+      </div>
+    </div>
+
+    <div class="receipt-footer">
+      <div class="pharmacy-contact-info">
+        <p><strong>📍 {{ pharmacy_info.name }}</strong></p>
+        <p>{{ pharmacy_info.address }}</p>
+        <p><strong>📞</strong> {{ pharmacy_info.phone_number }}</p>
+        {% if pharmacy_info.phone_number_2 %}
+        <p><strong>📞</strong> {{ pharmacy_info.phone_number_2 }}</p>
+        {% endif %}
+      </div>
+      <p> <h2><strong> အားလုံးချစ်သော NC </strong> </h2> </p>
+    </div>
+  </div>
+</div>
+
+<div class="text-center mt-3 no-print">
+  <button onclick="window.print()" class="btn btn-primary">
+    🖨️ Print Voucher
+  </button>
+  <a href="{% url 'pos' %}" class="btn btn-secondary">➕ New Sale</a>
+  <a href="{% url 'pos' %}?sale_id={{ sale.pk }}" class="btn btn-warning">✏️ Modify Sale</a>
+</div>
+{% endblock %}

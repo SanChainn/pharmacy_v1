@@ -1,0 +1,19 @@
+<!-- inventory/templates/inventory/staff_creation_form.html -->
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h2 class="mb-0">Create New Staff Member</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <hr>
+            <button type="submit" class="btn btn-success">Create Staff</button>
+            <a href="{% url 'staff_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

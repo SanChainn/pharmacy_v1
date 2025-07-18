@@ -1,0 +1,49 @@
+<!-- inventory/templates/inventory/medicine_form.html -->
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h2 class="mb-0">
+            {% if form.instance.pk %}
+                Edit Medicine
+            {% else %}
+                Add New Medicine
+            {% endif %}
+        </h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-md-6 mb-3">
+                    <h4>Core Information</h4>
+                    <div class="mb-3">{{ form.code.label_tag }} {{ form.code }}</div>
+                    <div class="mb-3">{{ form.name.label_tag }} {{ form.name }}</div>
+                    <div class="mb-3">{{ form.brand_name.label_tag }} {{ form.brand_name }}</div>
+                    
+                    <h4 class="mt-4">Categorization</h4>
+                    <div class="mb-3">{{ form.category.label_tag }} {{ form.category }}</div>
+                    <div class="mb-3">{{ form.unit_per_package.label_tag }} {{ form.unit_per_package }}</div>
+                    <div class="mb-3">{{ form.package_type.label_tag }} {{ form.package_type }}</div>
+                </div>
+                <!-- Right Column -->
+                <div class="col-md-6 mb-3">
+                    <h4>Stock & Pricing</h4>
+                    <div class="mb-3">{{ form.quantity.label_tag }} {{ form.quantity }}</div>
+                    <div class="mb-3">{{ form.purchase_price.label_tag }} {{ form.purchase_price }}</div>
+                    <div class="mb-3">{{ form.selling_price.label_tag }} {{ form.selling_price }}</div>
+
+                    <h4 class="mt-4">Dates</h4>
+                    <div class="mb-3">{{ form.purchase_date.label_tag }} {{ form.purchase_date }}</div>
+                    <div class="mb-3">{{ form.expiry_date.label_tag }} {{ form.expiry_date }}</div>
+                </div>
+            </div>
+            <hr>
+            <button type="submit" class="btn btn-success">Save</button>
+            <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

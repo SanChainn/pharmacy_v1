@@ -1,0 +1,281 @@
+<!-- inventory/templates/inventory/medicine_list.html -->
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h1 class="mb-2 me-3">Medicine Inventory</h1>
+        <div class="d-flex align-items-center flex-wrap">
+            <a href="{% url 'medicine_new' %}" class="btn btn-primary me-2 mb-2">Add New Medicine</a>
+            <a href="{% url 'export_inventory_csv' %}" class="btn btn-info me-2 mb-2">Download CSV</a>
+        </div>
+    </div>
+
+    <!-- Upload and Search Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Search Bar -->
+                <div class="col-md-6">
+                    <label for="inventorySearchInput" class="form-label">Search Inventory</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="inventorySearchInput" placeholder="Type to search...">
+                    </div>
+                </div>
+                <!-- File Upload Form -->
+                <div class="col-md-6">
+                    <label class="form-label">Upload Inventory from CSV or Excel</label>
+                    <form action="{% url 'upload_inventory_file' %}" method="post" enctype="multipart/form-data" class="d-flex">
+                        {% csrf_token %}
+                        {{ upload_form.file }}
+                        <button type="submit" class="btn btn-secondary ms-2">Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-items-tab" data-bs-toggle="tab" data-bs-target="#all-items" type="button" role="tab" aria-controls="all-items" aria-selected="true">All Items</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-warning" id="low-stock-tab" data-bs-toggle="tab" data-bs-target="#low-stock" type="button" role="tab" aria-controls="low-stock" aria-selected="false">
+                Low Stock 
+                {% if low_stock_medicines %}
+                    <span class="badge bg-warning rounded-pill">{{ low_stock_medicines|length }}</span>
+                {% endif %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-danger" id="expiring-soon-tab" data-bs-toggle="tab" data-bs-target="#expiring-soon" type="button" role="tab" aria-controls="expiring-soon" aria-selected="false">
+                Expiring Soon
+                {% if expiring_soon_medicines %}
+                    <span class="badge bg-danger rounded-pill">{{ expiring_soon_medicines|length }}</span>
+                {% endif %}
+            </button>
+        </li>
+        <li class="nav-item ms-auto">
+             <a href="{% url 'threshold_edit' thresholds.pk %}" class="nav-link text-secondary">Adjust Thresholds</a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="inventoryTabsContent">
+        <!-- All Items Tab Pane -->
+        <div class="tab-pane fade show active" id="all-items" role="tabpanel" aria-labelledby="all-items-tab">
+            <div class="card card-body border-top-0">
+                <!-- Desktop Table View (hidden on small screens) -->
+                <div class="table-responsive d-none d-lg-block">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Brand</th>
+                                <th>Category</th>
+                                <th>Units</th>
+                                <th>Package Type</th>
+                                <th>Stock</th>
+                                <th>Sell Price</th>
+                                <th>Expire Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="searchable-container">
+                            {% for medicine in medicines %}
+                            <tr class="searchable-row {% if medicine.is_low_stock %}table-warning{% endif %}{% if medicine.is_expiring_soon %} table-danger{% endif %}">
+                                <td class="search-code">{{ medicine.code }}</td>
+                                <td class="search-name">{{ medicine.name }}</td>
+                                <td class="search-brand">{{ medicine.brand_name }}</td>
+                                <td class="search-category">{{ medicine.get_category_display }}</td>
+                                <td>{{ medicine.unit_per_package }}</td>
+                                <td class="search-package">{{ medicine.package_type }}</td>
+                                <td>{{ medicine.quantity }}</td>
+                                <td>{{ medicine.selling_price|floatformat:0 }}</td>
+                                <td>{{ medicine.expiry_date|date:"Y-m-d" }}</td>
+                                <td>
+                                    <a href="{% url 'medicine_edit' medicine.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                                    <a href="{% url 'medicine_delete' medicine.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="10" class="text-center">No medicines found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Card View (hidden on large screens) -->
+                <div class="d-lg-none searchable-container">
+                    {% for medicine in medicines %}
+                    <div class="card mb-3 searchable-row {% if medicine.is_low_stock %}border-warning{% endif %}{% if medicine.is_expiring_soon %} border-danger{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="card-title search-name">{{ medicine.name }}</h5>
+                                <span class="badge {% if medicine.is_low_stock %}bg-warning text-dark{% else %}bg-light text-dark{% endif %}">Stock: {{ medicine.quantity }}</span>
+                            </div>
+                            <h6 class="card-subtitle mb-2 text-muted search-brand">{{ medicine.brand_name }}</h6>
+                            <p class="card-text mb-1">
+                                <strong>Code:</strong> <span class="search-code">{{ medicine.code }}</span><br>
+                                <strong>Category:</strong> <span class="search-category">{{ medicine.get_category_display }}</span><br>
+                                <strong>Package:</strong> {{ medicine.unit_per_package }} units / <span class="search-package">{{ medicine.package_type }}</span>
+                            </p>
+                             <p class="card-text">
+                                <strong>Sell Price:</strong> {{ medicine.selling_price|floatformat:0 }} <br>
+                                <strong>Expires:</strong> <span class="{% if medicine.is_expiring_soon %}text-danger fw-bold{% endif %}">{{ medicine.expiry_date|date:"Y-m-d" }}</span>
+                            </p>
+                            <a href="{% url 'medicine_edit' medicine.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                            <a href="{% url 'medicine_delete' medicine.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center">No medicines in inventory.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Tab Pane -->
+        <div class="tab-pane fade" id="low-stock" role="tabpanel" aria-labelledby="low-stock-tab">
+            <div class="card card-body border-top-0">
+                <p>Showing items with stock at or below the threshold of <strong>{{ thresholds.low_stock_threshold }}</strong> units.</p>
+                <!-- Desktop View -->
+                <div class="table-responsive d-none d-lg-block">
+                    <table class="table table-hover table-warning mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Brand</th>
+                                <th>Stock Quantity</th>
+                                <th>Expire Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="searchable-container">
+                            {% for medicine in low_stock_medicines %}
+                            <tr class="searchable-row">
+                                <td class="search-code">{{ medicine.code }}</td>
+                                <td class="search-name">{{ medicine.name }}</td>
+                                <td class="search-brand">{{ medicine.brand_name }}</td>
+                                <td><strong>{{ medicine.quantity }}</strong></td>
+                                <td>{{ medicine.expiry_date|date:"Y-m-d" }}</td>
+                                <td><a href="{% url 'medicine_edit' medicine.pk %}" class="btn btn-sm btn-warning">Edit</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center">No items are currently low on stock.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                 <!-- Mobile View -->
+                <div class="d-lg-none searchable-container">
+                    {% for medicine in low_stock_medicines %}
+                    <div class="card mb-3 searchable-row border-warning">
+                        <div class="card-body">
+                             <h5 class="card-title search-name">{{ medicine.name }}</h5>
+                             <p class="card-text mb-1"><strong>Code:</strong> <span class="search-code">{{ medicine.code }}</span></p>
+                             <p class="card-text"><strong>Stock:</strong> {{ medicine.quantity }}</p>
+                             <a href="{% url 'medicine_edit' medicine.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center">No items are currently low on stock.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiring Soon Tab Pane -->
+        <div class="tab-pane fade" id="expiring-soon" role="tabpanel" aria-labelledby="expiring-soon-tab">
+             <div class="card card-body border-top-0">
+                <p>Showing items expiring within <strong>{{ thresholds.expiry_threshold_days }}</strong> days.</p>
+                <!-- Desktop View -->
+                 <div class="table-responsive d-none d-lg-block">
+                    <table class="table table-hover table-danger mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Brand</th>
+                                <th>Stock Quantity</th>
+                                <th>Expires On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="searchable-container">
+                            {% for medicine in expiring_soon_medicines %}
+                            <tr class="searchable-row">
+                                <td class="search-code">{{ medicine.code }}</td>
+                                <td class="search-name">{{ medicine.name }}</td>
+                                <td class="search-brand">{{ medicine.brand_name }}</td>
+                                <td>{{ medicine.quantity }}</td>
+                                <td><strong>{{ medicine.expiry_date|date:"Y-m-d" }}</strong></td>
+                                <td><a href="{% url 'medicine_edit' medicine.pk %}" class="btn btn-sm btn-warning">Edit</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center">No items are expiring soon.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                 <!-- Mobile View -->
+                 <div class="d-lg-none searchable-container">
+                     {% for medicine in expiring_soon_medicines %}
+                    <div class="card mb-3 searchable-row border-danger">
+                        <div class="card-body">
+                             <h5 class="card-title search-name">{{ medicine.name }}</h5>
+                             <p class="card-text mb-1"><strong>Code:</strong> <span class="search-code">{{ medicine.code }}</span></p>
+                             <p class="card-text"><strong>Expires:</strong> {{ medicine.expiry_date|date:"Y-m-d" }}</p>
+                             <a href="{% url 'medicine_edit' medicine.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        </div>
+                    </div>
+                     {% empty %}
+                     <p class="text-center">No items are expiring soon.</p>
+                     {% endfor %}
+                 </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('inventorySearchInput');
+    const searchableContainers = document.querySelectorAll('.searchable-container');
+
+    searchInput.addEventListener('keyup', function(e) {
+        const query = e.target.value.toLowerCase();
+
+        searchableContainers.forEach(function(container) {
+            const rows = container.querySelectorAll('.searchable-row');
+            rows.forEach(function(row) {
+                const code = row.querySelector('.search-code')?.textContent.toLowerCase() || '';
+                const name = row.querySelector('.search-name')?.textContent.toLowerCase() || '';
+                const brand = row.querySelector('.search-brand')?.textContent.toLowerCase() || '';
+                const category = row.querySelector('.search-category')?.textContent.toLowerCase() || '';
+                const packageType = row.querySelector('.search-package')?.textContent.toLowerCase() || '';
+
+                if (code.includes(query) || name.includes(query) || brand.includes(query) || category.includes(query) || packageType.includes(query)) {
+                    row.style.display = ''; // Show row/card
+                } else {
+                    row.style.display = 'none'; // Hide row/card
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

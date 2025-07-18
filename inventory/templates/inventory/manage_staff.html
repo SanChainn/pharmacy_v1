@@ -1,0 +1,107 @@
+<!-- inventory/templates/inventory/manage_staff.html -->
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+    <h1 class="mb-4">Staff Management</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs" id="staffTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="staff-list-tab" data-bs-toggle="tab" data-bs-target="#staff-list" type="button" role="tab">User List</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="create-staff-tab" data-bs-toggle="tab" data-bs-target="#create-staff" type="button" role="tab">Create New Staff</button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="staffTabsContent">
+        <!-- Staff List Tab -->
+        <div class="tab-pane fade show active" id="staff-list" role="tabpanel">
+            <div class="card card-body border-top-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for staff in staff_list %}
+                            <tr>
+                                <td>
+                                    {{ staff.username }}
+                                    {% if user.pk == staff.pk %}<span class="badge bg-light text-dark ms-2">You</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if staff.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">{{ staff.profile.get_role_display }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ staff.profile.get_role_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.pk != staff.pk %}
+                                        {% if staff.profile.role == 'staff' %}
+                                        <a href="{% url 'manage_permissions' staff.pk %}" class="btn btn-sm btn-info">Permissions</a>
+                                        {% endif %}
+                                        <a href="{% url 'edit_staff' staff.pk %}" class="btn btn-sm btn-warning">Change Password</a>
+                                        <a href="{% url 'delete_staff' staff.pk %}" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete this user?');">
+                                            Delete
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center p-4">No users found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Staff Tab -->
+        <div class="tab-pane fade" id="create-staff" role="tabpanel">
+            <div class="card card-body border-top-0">
+                <h3>Create a New Staff Account</h3>
+                <form method="post" action="{% url 'manage_staff' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                        {{ form.username }}
+                        {% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                        {{ form.password }}
+                        {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <hr>
+                    <button type="submit" class="btn btn-success">Create Staff Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

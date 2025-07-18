@@ -1,0 +1,37 @@
+<!-- inventory/templates/inventory/manage_permissions.html -->
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h2 class="mb-0">Manage Permissions for: {{ staff_user.username }}</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <p>Select the permissions you want to grant to this staff member.</p>
+            
+            {% regroup permissions by content_type as permission_groups %}
+
+            {% for group in permission_groups %}
+                <fieldset class="mb-4">
+                    <legend class="h5">{{ group.grouper.model|title }} Permissions</legend>
+                    {% for permission in group.list %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="permissions" value="{{ permission.id }}" id="perm_{{ permission.id }}" 
+                               {% if permission in staff_permissions %}checked{% endif %}>
+                        <label class="form-check-label" for="perm_{{ permission.id }}">
+                            {{ permission.name }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </fieldset>
+            {% endfor %}
+            
+            <hr>
+            <button type="submit" class="btn btn-success">Save Permissions</button>
+            <a href="{% url 'manage_staff' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

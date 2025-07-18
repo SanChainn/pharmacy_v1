@@ -1,0 +1,360 @@
+{% extends 'inventory/base.html' %} 
+{% load humanize %}
+{% block title %}Point of Sale{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom scrollbar for a cleaner look */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9; /* A light gray track */
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #94a3b8; /* A muted blue-gray thumb */
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #64748b; /* Darker on hover */
+    }
+    .medicine-item:hover {
+        background-color: #e9ecef; /* Subtle hover effect for medicine list */
+    }
+</style>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h2 class="h4 mb-3">Available Medicines</h2>
+                <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search by Code, Name, Brand, Category...">
+                
+                <div id="medicine-list" class="list-group custom-scrollbar" style="overflow-y: auto; max-height: 75vh;">
+                    {% for medicine in medicines %}
+                    <a href="#" class="list-group-item list-group-item-action medicine-item" 
+                       data-id="{{ medicine.pk }}" 
+                       data-code="{{ medicine.code }}"
+                       data-name="{{ medicine.name }}" 
+                       data-brand="{{ medicine.brand_name }}"
+                       data-category="{{ medicine.get_category_display }}"
+                       data-price="{{ medicine.selling_price }}" 
+                       data-stock="{{ medicine.quantity }}"
+                       data-package-type="{{ medicine.package_type }}">
+                        
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1 search-name">{{ medicine.name }}</h5>
+                            <span class="badge bg-light text-dark">Stock: {{ medicine.quantity }}</span>
+                        </div>
+                        
+                        <p class="mb-1 small">
+                            <span class="fw-bold search-code">{{ medicine.code }}</span> | 
+                            <span class="text-muted search-brand">{{ medicine.brand_name }}</span> |
+                            <span class="text-muted search-package">{{ medicine.package_type }}</span>
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted search-category">{{ medicine.get_category_display }}</small>
+                            <p class="mb-0 h6 text-success"> {{ medicine.selling_price|floatformat:0|intcomma }}</p>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <p class="text-center text-muted mt-3">No medicines in stock.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <h2 class="h4 mb-3">Current Sale</h2>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                Customer Information (Optional)
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label for="customer-name" class="form-label small">Name</label>
+                        <input type="text" id="customer-name" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label for="customer-phone" class="form-label small">Phone No.</label>
+                        <input type="text" id="customer-phone" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                         <label for="customer-address" class="form-label small">Address</label>
+                         <textarea id="customer-address" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0" style="max-height: 35vh; overflow-y: auto;">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Package Type</th>
+                                <th style="width: 120px;">Price</th>
+                                <th style="width: 120px;">Quantity</th>
+                                <th class="text-end">Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items">
+                            <tr id="empty-cart-row"><td colspan="6" class="text-center py-5 text-muted">Cart is empty</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="row align-items-center g-3">
+                    <div class="col-lg-6">
+                        <div class="input-group">
+                            <span class="input-group-text">Delivery Fee</span>
+                            <input type="number" id="delivery-fee" class="form-control" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between py-1">
+                                <span>Subtotal:</span>
+                                <strong> <span id="cart-subtotal">0</span></strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-1">
+                                <span>Delivery:</span>
+                                <strong> <span id="delivery-total">0</span></strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between bg-white fs-5 py-2">
+                                <span class="fw-bold">Grand Total:</span>
+                                <span class="text-success fw-bold"> <span id="grand-total">0</span></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                     <button id="checkout-btn" class="btn btn-success btn-lg" disabled>Complete Sale & View Voucher</button>
+                </div>
+            </div>
+        </div>
+        <div id="alert-placeholder" class="mt-3"></div>
+    </div>
+</div>
+{% endblock %} 
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cart = {};
+    const cartTableBody = document.getElementById('cart-items');
+    const emptyCartRow = document.getElementById('empty-cart-row');
+    
+    // Customer Info
+    const customerName = document.getElementById('customer-name');
+    const customerPhone = document.getElementById('customer-phone');
+    const customerAddress = document.getElementById('customer-address');
+
+    // Summary elements
+    const cartSubtotalSpan = document.getElementById('cart-subtotal');
+    const deliveryTotalSpan = document.getElementById('delivery-total');
+    const grandTotalSpan = document.getElementById('grand-total');
+    const deliveryFeeInput = document.getElementById('delivery-fee');
+    
+    const checkoutBtn = document.getElementById('checkout-btn');
+
+    // Variable to hold the sale ID if modifying an existing sale
+    let currentSaleId = null; 
+
+    function updateCalculations() {
+        let subtotal = 0;
+        Object.values(cart).forEach(item => { subtotal += item.price * item.quantity; });
+        const deliveryFee = parseInt(deliveryFeeInput.value) || 0;
+        const grandTotal = subtotal + deliveryFee;
+        cartSubtotalSpan.textContent = subtotal.toLocaleString();
+        deliveryTotalSpan.textContent = deliveryFee.toLocaleString();
+        grandTotalSpan.textContent = grandTotal.toLocaleString();
+        checkoutBtn.disabled = Object.keys(cart).length === 0;
+    }
+
+    function updateCartTable() {
+        cartTableBody.innerHTML = '';
+        if (Object.keys(cart).length === 0) {
+            cartTableBody.appendChild(emptyCartRow);
+        } else {
+            Object.values(cart).forEach(item => {
+                const row = document.createElement('tr');
+                row.dataset.id = item.id;
+                row.innerHTML = `
+                    <td class="align-middle"><strong>${item.name}</strong></td>
+                    <td class="align-middle">${item.packageType}</td>
+                    <td class="align-middle"><input type="text" class="form-control form-control-sm price-input" value="${item.price}"></td>
+                    <td class="align-middle">
+                        <input type="text" class="form-control form-control-sm quantity-input" value="${item.quantity}">
+                    </td>
+                    <td class="align-middle text-end"><strong>${(item.price * item.quantity).toLocaleString()}</strong></td>
+                    <td class="align-middle text-center"><button class="btn btn-link text-danger p-0" onclick="removeItem('${item.id}')">&times;</button></td>
+                `;
+                cartTableBody.appendChild(row);
+            });
+        }
+        updateCalculations();
+    }
+    
+    // Function to load existing sale data
+    function loadSaleData(sale) {
+        currentSaleId = sale.pk;
+        customerName.value = sale.customer_name || '';
+        customerPhone.value = sale.customer_phone || '';
+        customerAddress.value = sale.customer_address || '';
+        deliveryFeeInput.value = sale.delivery_fee;
+
+        sale.items.forEach(item => {
+            const medicineElement = document.querySelector(`.medicine-item[data-id="${item.medicine_id}"]`);
+            if (medicineElement) {
+                const stock = parseInt(medicineElement.dataset.stock) + item.quantity; // Add back the quantity from the sale for correct stock check
+                cart[item.medicine_id] = {
+                    id: item.medicine_id,
+                    name: item.medicine_name,
+                    price: item.price_at_sale,
+                    quantity: item.quantity,
+                    stock: stock, 
+                    packageType: item.medicine_package_type
+                };
+            }
+        });
+        updateCartTable();
+    }
+
+
+    document.getElementById('medicine-list').addEventListener('click', function(e) {
+        const medicineItem = e.target.closest('.medicine-item');
+        if (!medicineItem) return;
+        
+        e.preventDefault();
+        const { id, name, price, stock, packageType } = medicineItem.dataset;
+        
+        if (cart[id]) {
+            if (cart[id].quantity < parseInt(stock)) {
+                cart[id].quantity++;
+            }
+        } else {
+            if (parseInt(stock) > 0) {
+                cart[id] = { id, name, price: parseInt(price), quantity: 1, stock: parseInt(stock), packageType };
+            } else {
+                showAlert(`'${name}' is out of stock.`, 'warning');
+            }
+        }
+        updateCartTable();
+    });
+
+    cartTableBody.addEventListener('change', function(e) {
+        const target = e.target;
+        const row = target.closest('tr');
+        if (!row) return;
+
+        const id = row.dataset.id;
+        if (!cart[id]) return;
+
+        if (target.classList.contains('price-input')) {
+            const newPrice = parseInt(target.value, 10);
+            if (!isNaN(newPrice) && newPrice >= 0) {
+                cart[id].price = newPrice;
+            }
+        } else if (target.classList.contains('quantity-input')) {
+            const newQty = parseInt(target.value, 10);
+            
+            if (isNaN(newQty) || newQty <= 0) {
+                delete cart[id];
+            } else if (newQty > cart[id].stock) {
+                cart[id].quantity = cart[id].stock;
+                showAlert(`Maximum stock for ${cart[id].name} is ${cart[id].stock}.`, 'warning');
+            } else {
+                cart[id].quantity = newQty;
+            }
+        }
+        updateCartTable();
+    });
+
+    deliveryFeeInput.addEventListener('input', updateCalculations);
+
+    checkoutBtn.addEventListener('click', () => {
+        const payload = {
+            cart: Object.values(cart).map(item => ({ id: item.id, quantity: item.quantity, price: item.price })),
+            delivery_fee: parseInt(deliveryFeeInput.value) || 0,
+            customer_name: customerName.value,
+            customer_phone: customerPhone.value,
+            customer_address: customerAddress.value,
+        };
+
+        if (currentSaleId) { // If modifying an existing sale, include its ID
+            payload.sale_id = currentSaleId;
+        }
+
+        fetch("{% url 'pos' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = `/sales/receipt/${data.sale_id}/`;
+            } else { showAlert(data.message, 'danger'); }
+        }).catch(() => showAlert('An error occurred during checkout.', 'danger'));
+    });
+
+    window.removeItem = id => {
+        delete cart[id];
+        updateCartTable();
+    };
+    
+    document.getElementById("searchInput").addEventListener("keyup", (e) => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll("#medicine-list .medicine-item").forEach((item) => {
+            const code = item.dataset.code.toLowerCase();
+            const name = item.dataset.name.toLowerCase();
+            const brand = item.dataset.brand.toLowerCase();
+            const category = item.dataset.category.toLowerCase();
+            if (code.includes(query) || name.includes(query) || brand.includes(query) || category.includes(query)) {
+                item.style.display = "";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    });
+
+    function showAlert(message, type) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+      document.getElementById("alert-placeholder").append(wrapper);
+    }
+
+    // Initialize cart with existing sale data if available
+    {% if sale_to_modify %}
+        const saleData = {
+            pk: {{ sale_to_modify.pk }},
+            customer_name: "{{ sale_to_modify.customer_name|escapejs }}",
+            customer_phone: "{{ sale_to_modify.customer_phone|escapejs }}",
+            customer_address: "{{ sale_to_modify.customer_address|escapejs }}",
+            delivery_fee: {{ sale_to_modify.delivery_fee }},
+            items: [
+                {% for item in sale_to_modify.items.all %}
+                {
+                    medicine_id: {{ item.medicine.pk }},
+                    medicine_name: "{{ item.medicine.name|escapejs }}",
+                    medicine_package_type: "{{ item.medicine.package_type|escapejs }}",
+                    quantity: {{ item.quantity }},
+                    price_at_sale: {{ item.price_at_sale }}
+                },
+                {% endfor %}
+            ]
+        };
+        loadSaleData(saleData);
+    {% endif %}
+});
+</script>
+{% endblock %}
