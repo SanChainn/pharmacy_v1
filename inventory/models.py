@@ -85,6 +85,9 @@ class Medicine(models.Model):
     supplier_name = models.CharField(max_length=100, blank=True)
     storage_info = models.TextField(blank=True)
     location = models.CharField(max_length=100, blank=True)
+    
+    # Add this new field
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
 
     def __str__(self):
         return f"{self.name} ({self.brand_name})"

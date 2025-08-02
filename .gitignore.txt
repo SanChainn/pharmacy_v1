@@ -1,0 +1,10 @@
+# Ignore database file
+db.sqlite3
+
+# Ignore Python bytecode
+__pycache__/
+*.pyc
+
+# Ignore environment variables and system files
+*.log
+*.env

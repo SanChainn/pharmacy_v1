@@ -3,8 +3,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.db import transaction
-from django.db.models import Sum, F
+from django.db import transaction, IntegrityError
+from django.db.models import Sum, F, ProtectedError
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 import json
@@ -155,7 +155,6 @@ def manage_permissions_view(request, user_id):
     """Manages the permissions for a specific staff member."""
     staff_user = get_object_or_404(User, pk=user_id, profile__role__in=['staff', 'admin'])
     
-    # Admins have all permissions implicitly, so we don't show the form for them.
     if staff_user.profile.role == 'admin':
         messages.info(request, "Admin users have all permissions by default and cannot be edited.")
         return redirect('manage_staff')
@@ -183,9 +182,16 @@ class MedicineListView(LoginRequiredMixin, ListView):
     context_object_name = 'medicines'
     login_url = '/login/'
 
+    def get_queryset(self):
+        """
+        MODIFIED: This now only shows active medicines in the main inventory list.
+        """
+        return Medicine.objects.filter(is_active=True)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         thresholds, _ = Threshold.objects.get_or_create(pk=1)
+        
         medicines = self.get_queryset()
         expiry_alert_date = date.today() + timedelta(days=thresholds.expiry_threshold_days)
 
@@ -225,6 +231,18 @@ class MedicineDeleteView(PermissionRequiredMixin, DeleteView):
     model = Medicine
     template_name = 'inventory/medicine_confirm_delete.html'
     success_url = reverse_lazy('medicine_list')
+
+    def post(self, request, *args, **kwargs):
+        """
+        MODIFIED: This method no longer deletes the object.
+        It sets the 'is_active' flag to False.
+        """
+        medicine = self.get_object()
+        medicine.is_active = False
+        medicine.save()
+        messages.success(request, f"Successfully removed '{medicine.name}' from the active inventory.")
+        return redirect(self.success_url)
+
 
 class ThresholdUpdateView(PermissionRequiredMixin, UpdateView):
     permission_required = 'change_threshold'
@@ -291,7 +309,8 @@ def pos_view(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-    medicines = Medicine.objects.filter(quantity__gt=0)
+    # MODIFIED: Ensure only active medicines are available for sale.
+    medicines = Medicine.objects.filter(quantity__gt=0, is_active=True)
     
     sale_to_modify = None
     sale_id = request.GET.get('sale_id')
@@ -299,7 +318,7 @@ def pos_view(request):
         try:
             sale_to_modify = Sale.objects.get(pk=sale_id)
         except Sale.DoesNotExist:
-            pass # Will just open a new POS page
+            pass 
 
     return render(request, 'inventory/pos.html', {'medicines': medicines, 'sale_to_modify': sale_to_modify})
 
