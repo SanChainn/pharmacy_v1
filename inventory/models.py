@@ -56,22 +56,17 @@ class Medicine(models.Model):
     Represents a medicine in the inventory.
     """
     CATEGORY_CHOICES = [
-        ('Painkillers', 'Painkillers (Analgesics)'),
-        ('Antibiotics', 'Antibiotics'),
-        ('Antipyretics', 'Antipyretics (fever reducers)'),
-        ('Antihistamines', 'Antihistamines (allergy)'),
-        ('Antacids', 'Antacids (gastric)'),
-        ('Antidiabetics', 'Antidiabetics'),
-        ('Antihypertensives', 'Antihypertensives'),
-        ('Cough & Cold', 'Cough & Cold'),
-        ('Antiseptics', 'Antiseptics'),
-        ('Vitamins & Supplements', 'Vitamins & Supplements'),
+        ('Tablet', 'Tablet'),
+        ('Syrup', 'Syrup'),
+        ('Injection', 'Injection'),
+        ('Cream', 'Cream'),
+        ('Instrument', 'Instrument'),
         ('Other', 'Other'),
     ]
 
     code = models.CharField(max_length=50, blank=True, verbose_name="Code")
     name = models.CharField(max_length=100, verbose_name="Name")
-    brand_name = models.CharField(max_length=100, blank=True, verbose_name="Brand")
+    brand_name = models.CharField(max_length=100, blank=True, verbose_name="Chemical Name")
     
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='Other', verbose_name="Category")
     unit_per_package = models.PositiveIntegerField(default=1, verbose_name="Units/Pkg")
